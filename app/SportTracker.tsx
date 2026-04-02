@@ -245,8 +245,8 @@ export default function SportTracker() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-    <div className="space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Sub-tabs */}
       <div className="flex gap-0 border-b border-[#5a5a63]">
         {(["log", "dashboard", "history"] as const).map((tab) => (
@@ -277,7 +277,7 @@ export default function SportTracker() {
           }}
           className="space-y-5"
         >
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-xs uppercase tracking-[0.2em] mb-2 text-[#a5a5ad]">
                 Date
@@ -347,8 +347,8 @@ export default function SportTracker() {
                 <label className="block text-xs uppercase tracking-[0.2em] mb-2 text-[#a5a5ad]">
                   Exercises
                 </label>
-                <div className="border border-[#5a5a63] overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="border border-[#5a5a63] overflow-x-auto">
+                  <table className="w-full text-sm min-w-[400px]">
                     <thead>
                       <tr className="bg-[#323238] text-[#a5a5ad] text-[10px] uppercase tracking-[0.2em]">
                         <th className="text-left px-3 py-2">Exercise</th>
@@ -430,7 +430,7 @@ export default function SportTracker() {
               </div>
             </div>
           )}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-xs uppercase tracking-[0.2em] mb-2 text-[#a5a5ad]">
                 Duration (minutes)
@@ -677,8 +677,8 @@ export default function SportTracker() {
                       <h4 className="text-xs uppercase tracking-[0.2em] text-[#fbbf24] mb-3">
                         {category} Day
                       </h4>
-                      <div className="border border-[#5a5a63] overflow-hidden">
-                        <table className="w-full text-sm">
+                      <div className="border border-[#5a5a63] overflow-x-auto">
+                        <table className="w-full text-sm min-w-[420px]">
                           <thead>
                             <tr className="bg-[#323238] text-[#a5a5ad] text-[10px] uppercase tracking-[0.2em]">
                               <th className="text-left px-3 py-2">Exercise</th>
@@ -775,8 +775,8 @@ export default function SportTracker() {
                       )}
                     </div>
                     {entry.workoutSets && entry.workoutSets.length > 0 && (
-                      <div className="mt-2 border border-[#5a5a63] overflow-hidden">
-                        <table className="w-full text-xs">
+                      <div className="mt-2 border border-[#5a5a63] overflow-x-auto">
+                        <table className="w-full text-xs min-w-[320px]">
                           <thead>
                             <tr className="bg-[#323238] text-[#a5a5ad] text-[9px] uppercase tracking-[0.15em]">
                               <th className="text-left px-2 py-1.5">Exercise</th>

@@ -26,14 +26,25 @@ export default function Home() {
     e.target.value = "";
   }
 
+  function handleLogout() {
+    // Send a request with invalid credentials to force browser to forget Basic Auth
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "/api/health", true);
+    xhr.setRequestHeader("Authorization", "Basic " + btoa("logout:logout"));
+    xhr.onloadend = () => {
+      window.location.replace("/");
+    };
+    xhr.send();
+  }
+
   return (
     <div className="min-h-screen bg-[#323238] text-[#f5f0eb]">
       {/* Header */}
       <header className="border-b border-[#5a5a63]">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <h1
-              className="text-2xl md:text-3xl font-bold uppercase tracking-[0.15em]"
+              className="text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[0.15em]"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Progress
@@ -42,26 +53,32 @@ export default function Home() {
               Tracker
             </span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {activeTab === "course" && data.courses.length >= 2 && (
               <a
                 href="/comparison"
-                className="px-5 py-2.5 text-xs uppercase tracking-[0.2em] border border-[#5a5a63] hover:border-[#e4007c] hover:text-[#e4007c] text-[#a5a5ad] transition-all duration-300"
+                className="px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs uppercase tracking-[0.2em] border border-[#5a5a63] hover:border-[#e4007c] hover:text-[#e4007c] text-[#a5a5ad] transition-all duration-300"
               >
                 Compare
               </a>
             )}
             <button
               onClick={exportToJson}
-              className="px-5 py-2.5 text-xs uppercase tracking-[0.2em] border border-[#5a5a63] hover:border-[#e4007c] hover:text-[#e4007c] text-[#a5a5ad] transition-all duration-300 cursor-pointer"
+              className="px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs uppercase tracking-[0.2em] border border-[#5a5a63] hover:border-[#e4007c] hover:text-[#e4007c] text-[#a5a5ad] transition-all duration-300 cursor-pointer"
             >
               Export
             </button>
             <button
               onClick={handleImport}
-              className="px-5 py-2.5 text-xs uppercase tracking-[0.2em] bg-[#e4007c] hover:bg-[#ff3da1] text-white transition-all duration-300 cursor-pointer"
+              className="px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs uppercase tracking-[0.2em] bg-[#e4007c] hover:bg-[#ff3da1] text-white transition-all duration-300 cursor-pointer"
             >
               Import
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-3 sm:px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs uppercase tracking-[0.2em] border border-[#5a5a63] hover:border-red-500 hover:text-red-500 text-[#a5a5ad] transition-all duration-300 cursor-pointer"
+            >
+              Logout
             </button>
             <input
               ref={fileInputRef}
@@ -74,7 +91,7 @@ export default function Home() {
         </div>
 
         {/* Tabs */}
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex gap-0">
             <button
               onClick={() => setActiveTab("course")}

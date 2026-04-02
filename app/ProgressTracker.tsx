@@ -121,7 +121,7 @@ export default function ProgressTracker() {
     : [];
 
   return (
-      <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col lg:flex-row gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col lg:flex-row gap-6 sm:gap-8">
         {/* Sidebar - Course List */}
         <aside className="lg:w-80 shrink-0">
           <div className="mb-6">
