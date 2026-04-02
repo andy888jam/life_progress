@@ -815,23 +815,23 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
               .map((entry) => (
                 <div
                   key={entry.id}
-                  className="flex items-start gap-6 p-5 bg-[#3b3b42] border border-[#5a5a63] hover:border-[#6a6a72] transition-colors"
+                  className="flex items-start gap-4 sm:gap-6 p-4 sm:p-5 bg-[#3b3b42] border border-[#5a5a63] hover:border-[#6a6a72] transition-colors"
                 >
-                  <div className="shrink-0 text-center min-w-[48px]">
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-[#a5a5ad]">
+                  <div className="shrink-0 text-center min-w-[40px] sm:min-w-[48px]">
+                    <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-[#a5a5ad]">
                       {new Date(entry.date).toLocaleDateString("en-US", {
                         month: "short",
                       })}
                     </div>
                     <div
-                      className="text-2xl font-bold"
+                      className="text-xl sm:text-2xl font-bold"
                       style={{ fontFamily: "'Playfair Display', serif" }}
                     >
                       {new Date(entry.date).getDate()}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                       <div
                         className="w-2 h-2 rounded-full"
                         style={{

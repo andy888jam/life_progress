@@ -1,6 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="38" fill="#323238"/>
-  <text x="96" y="119" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="86" fill="#e4007c">P</text>
-  <rect x="29" y="138" width="134" height="8" rx="4" fill="#e4007c" opacity="0.4"/>
-  <rect x="29" y="138" width="87" height="8" rx="4" fill="#e4007c"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e4007c"/>
+      <stop offset="100%" style="stop-color:#ff3da1"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="#1e1e22"/>
+  <rect x="8" y="8" width="177" height="177" rx="36" fill="#27272b"/>
+  <circle cx="96" cy="96" r="61.44" fill="none" stroke="#3b3b42" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="96" cy="96" r="61.44" fill="none" stroke="url(#grad)" stroke-width="9" stroke-linecap="round" stroke-dasharray="386.0" stroke-dashoffset="108.1" transform="rotate(-90 96 96)"/>
+  <circle cx="96" cy="34.56" r="6" fill="#e4007c"/>
+  <text x="96" y="122" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="73" fill="#f5f0eb" opacity="0.95">P</text>
 </svg>
