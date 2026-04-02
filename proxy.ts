@@ -48,8 +48,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const loginUrl = new URL("/login", request.url);
-  return NextResponse.redirect(loginUrl);
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
+  const proto = request.headers.get("x-forwarded-proto") || "http";
+  return NextResponse.redirect(`${proto}://${host}/login`);
 }
 
 export const config = {
