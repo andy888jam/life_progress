@@ -27,14 +27,7 @@ export default function Home() {
   }
 
   function handleLogout() {
-    // Send a request with invalid credentials to force browser to forget Basic Auth
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/health", true);
-    xhr.setRequestHeader("Authorization", "Basic " + btoa("logout:logout"));
-    xhr.onloadend = () => {
-      window.location.replace("/");
-    };
-    xhr.send();
+    window.location.href = "/api/logout";
   }
 
   return (
