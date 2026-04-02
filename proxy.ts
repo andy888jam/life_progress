@@ -1,33 +1,57 @@
-// proxy.ts — Basic Auth 認證代理：透過環境變數 BASIC_AUTH_USER/PASS 控制存取權限
+// proxy.ts — 認證代理：檢查 session cookie，未登入導向 /login
 
 import { NextRequest, NextResponse } from "next/server";
 
-export function proxy(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
+function getSecret() {
+  return process.env.BASIC_AUTH_PASS || "changeme";
+}
 
-  if (authHeader) {
-    const [scheme, encoded] = authHeader.split(" ");
-    if (scheme === "Basic" && encoded) {
-      const decoded = atob(encoded);
-      const [user, pass] = decoded.split(":");
+async function verifyToken(token: string): Promise<boolean> {
+  try {
+    const decoded = atob(token);
+    const parts = decoded.split(":");
+    if (parts.length < 3) return false;
 
-      const validUser = process.env.BASIC_AUTH_USER || "admin";
-      const validPass = process.env.BASIC_AUTH_PASS || "changeme";
+    const user = parts[0];
+    const timestamp = parts[1];
+    const signature = parts.slice(2).join(":");
 
-      if (user === validUser && pass === validPass) {
-        return NextResponse.next();
-      }
-    }
+    // HMAC-SHA256 using Web Crypto API (Edge compatible)
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(getSecret()),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(`${user}:${timestamp}`));
+    const expected = Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    if (signature !== expected) return false;
+
+    const age = Date.now() - Number(timestamp);
+    if (age > 30 * 24 * 60 * 60 * 1000) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function proxy(request: NextRequest) {
+  const session = request.cookies.get("session")?.value;
+
+  if (session && (await verifyToken(session))) {
+    return NextResponse.next();
   }
 
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Progress Tracker"',
-    },
-  });
+  const loginUrl = new URL("/login", request.url);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/health|api/logout).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/health|api/auth|api/logout|login).*)"],
 };
