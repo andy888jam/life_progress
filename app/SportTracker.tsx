@@ -46,6 +46,14 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+function formatPace(durationMinutes: number, distanceKm: number): string | null {
+  if (!distanceKm || distanceKm <= 0 || !durationMinutes || durationMinutes <= 0) return null;
+  const paceMin = durationMinutes / distanceKm;
+  const mins = Math.floor(paceMin);
+  const secs = Math.round((paceMin - mins) * 60);
+  return `${mins}'${secs.toString().padStart(2, "0")}" /km`;
+}
+
 const TYPE_COLORS: Record<string, string> = {
   Running: "#e4007c",
   Cycling: "#00b4d8",
@@ -112,6 +120,7 @@ export default function SportTracker() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [sportSubTab, setSportSubTab] = useState<"log" | "dashboard" | "history">("log");
   const [workoutExerciseFilter, setWorkoutExerciseFilter] = useState("");
+  const [dashboardProgressTab, setDashboardProgressTab] = useState<"workout" | "run">("workout");
   const [workoutCategory, setWorkoutCategory] = useState<"Push" | "Pull" | "Legs">("Push");
   const [workoutSets, setWorkoutSets] = useState<WorkoutSet[]>([
     { exercise: "", weight: 0, sets: 0, reps: 0 },
@@ -243,6 +252,11 @@ export default function SportTracker() {
     }
     return { category: cat, exercises: Array.from(exerciseMap.entries()) };
   });
+
+  // Run progress: all running entries with distance, sorted newest first
+  const runProgressEntries = entries
+    .filter((e) => e.type === "Running" && e.distance && e.distance > 0)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -451,14 +465,22 @@ export default function SportTracker() {
               <input
                 type="number"
                 min="0"
-                step="0.1"
+                step="0.01"
                 value={distance}
                 onChange={(e) => setDistance(e.target.value)}
-                placeholder="e.g. 5.0"
+                placeholder="e.g. 5.00"
                 className="w-full px-4 py-3 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] placeholder-[#6a6a72] focus:outline-none focus:border-[#e4007c] transition-colors text-sm"
               />
             </div>
           </div>
+          {sportType === "Running" && durationMinutes && distance && formatPace(Number(durationMinutes), Number(distance)) && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-[#323238] border border-[#5a5a63]">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#a5a5ad]">Pace</span>
+              <span className="text-sm font-bold text-[#e4007c]">
+                {formatPace(Number(durationMinutes), Number(distance))}
+              </span>
+            </div>
+          )}
           <div>
             <label className="block text-xs uppercase tracking-[0.2em] mb-2 text-[#a5a5ad]">
               Comment / Details
@@ -602,6 +624,138 @@ export default function SportTracker() {
             </div>
           )}
 
+          {/* Progress Tables with Workout / Run tabs */}
+          {(workoutProgressByCategory.some((c) => c.exercises.length > 0) || runProgressEntries.length > 0) && (
+            <div className="border border-[#5a5a63] bg-[#3b3b42] p-6">
+              <div className="flex items-center gap-0 mb-6 border-b border-[#5a5a63]">
+                <button
+                  onClick={() => setDashboardProgressTab("workout")}
+                  className={`px-5 py-2.5 text-xs uppercase tracking-[0.2em] transition-colors border-b-2 cursor-pointer ${
+                    dashboardProgressTab === "workout"
+                      ? "border-[#fbbf24] text-[#fbbf24]"
+                      : "border-transparent text-[#a5a5ad] hover:text-[#f5f0eb]"
+                  }`}
+                >
+                  Workout
+                </button>
+                <button
+                  onClick={() => setDashboardProgressTab("run")}
+                  className={`px-5 py-2.5 text-xs uppercase tracking-[0.2em] transition-colors border-b-2 cursor-pointer ${
+                    dashboardProgressTab === "run"
+                      ? "border-[#e4007c] text-[#e4007c]"
+                      : "border-transparent text-[#a5a5ad] hover:text-[#f5f0eb]"
+                  }`}
+                >
+                  Run
+                </button>
+                {dashboardProgressTab === "workout" && (
+                  <div className="ml-auto">
+                    <select
+                      value={workoutExerciseFilter}
+                      onChange={(e) => setWorkoutExerciseFilter(e.target.value)}
+                      className="px-3 py-1.5 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-xs focus:outline-none focus:border-[#e4007c] transition-colors"
+                    >
+                      <option value="">All Exercises</option>
+                      {Array.from(
+                        new Set(
+                          workoutProgressByCategory.flatMap((c) =>
+                            c.exercises.map(([name]) => name)
+                          )
+                        )
+                      )
+                        .sort()
+                        .map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {dashboardProgressTab === "workout" && (
+                <div className="space-y-6">
+                  {workoutProgressByCategory
+                    .map(({ category, exercises }) => ({
+                      category,
+                      exercises: workoutExerciseFilter
+                        ? exercises.filter(([name]) => name === workoutExerciseFilter)
+                        : exercises,
+                    }))
+                    .filter((c) => c.exercises.length > 0)
+                    .map(({ category, exercises }) => (
+                      <div key={category}>
+                        <h4 className="text-xs uppercase tracking-[0.2em] text-[#fbbf24] mb-3">
+                          {category} Day
+                        </h4>
+                        <div className="border border-[#5a5a63] overflow-x-auto">
+                          <table className="w-full text-sm min-w-[420px]">
+                            <thead>
+                              <tr className="bg-[#323238] text-[#a5a5ad] text-[10px] uppercase tracking-[0.2em]">
+                                <th className="text-left px-3 py-2">Exercise</th>
+                                <th className="text-center px-3 py-2 w-20">Weight</th>
+                                <th className="text-center px-3 py-2 w-16">Sets</th>
+                                <th className="text-center px-3 py-2 w-16">Reps</th>
+                                <th className="text-right px-3 py-2 w-24">Last Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {exercises.map(([exercise, info]) => (
+                                <tr key={exercise} className="border-t border-[#5a5a63]">
+                                  <td className="px-3 py-2 text-[#f5f0eb]">{exercise}</td>
+                                  <td className="px-3 py-2 text-center text-[#fbbf24] font-bold">{info.weight}kg</td>
+                                  <td className="px-3 py-2 text-center text-[#a5a5ad]">{info.sets}</td>
+                                  <td className="px-3 py-2 text-center text-[#a5a5ad]">{info.reps}</td>
+                                  <td className="px-3 py-2 text-right text-[#a5a5ad] text-xs">{info.date}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  {workoutProgressByCategory.every((c) => c.exercises.length === 0) && (
+                    <p className="text-sm text-[#6a6a72] text-center py-8 italic">No workout data yet.</p>
+                  )}
+                </div>
+              )}
+
+              {dashboardProgressTab === "run" && (
+                <div>
+                  {runProgressEntries.length === 0 ? (
+                    <p className="text-sm text-[#6a6a72] text-center py-8 italic">No running data yet.</p>
+                  ) : (
+                    <div className="border border-[#5a5a63] overflow-x-auto">
+                      <table className="w-full text-sm min-w-[420px]">
+                        <thead>
+                          <tr className="bg-[#323238] text-[#a5a5ad] text-[10px] uppercase tracking-[0.2em]">
+                            <th className="text-left px-3 py-2">Date</th>
+                            <th className="text-center px-3 py-2 w-24">Distance</th>
+                            <th className="text-center px-3 py-2 w-24">Duration</th>
+                            <th className="text-center px-3 py-2 w-24">Pace</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {runProgressEntries.map((entry) => (
+                            <tr key={entry.id} className="border-t border-[#5a5a63]">
+                              <td className="px-3 py-2 text-[#f5f0eb]">{entry.date}</td>
+                              <td className="px-3 py-2 text-center text-[#34d399] font-bold">{entry.distance} km</td>
+                              <td className="px-3 py-2 text-center text-[#a5a5ad]">{formatDuration(entry.durationMinutes)}</td>
+                              <td className="px-3 py-2 text-center text-[#e4007c] font-bold">
+                                {formatPace(entry.durationMinutes, entry.distance!) || "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Activity Breakdown */}
           {Object.keys(typeBreakdown).length > 0 && (
             <div className="border border-[#5a5a63] bg-[#3b3b42] p-6">
@@ -628,78 +782,6 @@ export default function SportTracker() {
                               TYPE_COLORS[type] || TYPE_COLORS.Other,
                           }}
                         />
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* Workout Progress Table */}
-          {workoutProgressByCategory.some((c) => c.exercises.length > 0) && (
-            <div className="border border-[#5a5a63] bg-[#3b3b42] p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xs uppercase tracking-[0.3em] text-[#a5a5ad]">
-                  Workout Progress
-                </h3>
-                <select
-                  value={workoutExerciseFilter}
-                  onChange={(e) => setWorkoutExerciseFilter(e.target.value)}
-                  className="px-3 py-1.5 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-xs focus:outline-none focus:border-[#e4007c] transition-colors"
-                >
-                  <option value="">All Exercises</option>
-                  {Array.from(
-                    new Set(
-                      workoutProgressByCategory.flatMap((c) =>
-                        c.exercises.map(([name]) => name)
-                      )
-                    )
-                  )
-                    .sort()
-                    .map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div className="space-y-6">
-                {workoutProgressByCategory
-                  .map(({ category, exercises }) => ({
-                    category,
-                    exercises: workoutExerciseFilter
-                      ? exercises.filter(([name]) => name === workoutExerciseFilter)
-                      : exercises,
-                  }))
-                  .filter((c) => c.exercises.length > 0)
-                  .map(({ category, exercises }) => (
-                    <div key={category}>
-                      <h4 className="text-xs uppercase tracking-[0.2em] text-[#fbbf24] mb-3">
-                        {category} Day
-                      </h4>
-                      <div className="border border-[#5a5a63] overflow-x-auto">
-                        <table className="w-full text-sm min-w-[420px]">
-                          <thead>
-                            <tr className="bg-[#323238] text-[#a5a5ad] text-[10px] uppercase tracking-[0.2em]">
-                              <th className="text-left px-3 py-2">Exercise</th>
-                              <th className="text-center px-3 py-2 w-20">Weight</th>
-                              <th className="text-center px-3 py-2 w-16">Sets</th>
-                              <th className="text-center px-3 py-2 w-16">Reps</th>
-                              <th className="text-right px-3 py-2 w-24">Last Date</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {exercises.map(([exercise, info]) => (
-                              <tr key={exercise} className="border-t border-[#5a5a63]">
-                                <td className="px-3 py-2 text-[#f5f0eb]">{exercise}</td>
-                                <td className="px-3 py-2 text-center text-[#fbbf24] font-bold">{info.weight}kg</td>
-                                <td className="px-3 py-2 text-center text-[#a5a5ad]">{info.sets}</td>
-                                <td className="px-3 py-2 text-center text-[#a5a5ad]">{info.reps}</td>
-                                <td className="px-3 py-2 text-right text-[#a5a5ad] text-xs">{info.date}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
                       </div>
                     </div>
                   ))}
@@ -771,6 +853,11 @@ export default function SportTracker() {
                       {entry.distance && (
                         <span className="text-xs text-[#a5a5ad]">
                           · {entry.distance} km
+                        </span>
+                      )}
+                      {entry.type === "Running" && entry.distance && formatPace(entry.durationMinutes, entry.distance) && (
+                        <span className="text-xs font-medium text-[#e4007c]">
+                          · {formatPace(entry.durationMinutes, entry.distance)}
                         </span>
                       )}
                     </div>
