@@ -284,7 +284,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
 
       {/* ===== LOG TAB ===== */}
       {sportSubTab === "log" && (
-        <div className="border border-[#5a5a63] bg-[#3b3b42] p-6">
+        <div className="border border-[#5a5a63] bg-[#3b3b42] p-4 sm:p-6 overflow-hidden">
           <h3 className="text-xs uppercase tracking-[0.3em] text-[#a5a5ad] mb-6">
             Log Activity
           </h3>

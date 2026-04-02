@@ -47,6 +47,13 @@ body {
   display: none; /* Chrome/Safari */
 }
 
+input[type="date"] {
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
