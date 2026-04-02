@@ -12,8 +12,13 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { useLocalStorage } from "./useLocalStorage";
-import type { Course, ProgressEntry } from "./types";
+import type { AppData, Course, ProgressEntry } from "./types";
+
+interface Props {
+  data: AppData;
+  save: (newData: AppData) => void;
+  isLoaded: boolean;
+}
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
@@ -31,9 +36,7 @@ function getLatestProgress(course: Course): number {
   return sorted[0].percentage;
 }
 
-export default function ProgressTracker() {
-  const { data, save, isLoaded } =
-    useLocalStorage();
+export default function ProgressTracker({ data, save, isLoaded }: Props) {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [newCourseName, setNewCourseName] = useState("");
   const [logPercentage, setLogPercentage] = useState("");

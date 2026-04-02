@@ -11,7 +11,7 @@ type Tab = "course" | "sport";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("course");
-  const { exportToJson, importFromJson, data } = useLocalStorage();
+  const { exportToJson, importFromJson, data, save, isLoaded } = useLocalStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleImport() {
@@ -111,7 +111,7 @@ export default function Home() {
       </header>
 
       {/* Content */}
-      {activeTab === "course" ? <ProgressTracker /> : <SportTracker />}
+      {activeTab === "course" ? <ProgressTracker data={data} save={save} isLoaded={isLoaded} /> : <SportTracker data={data} save={save} isLoaded={isLoaded} />}
     </div>
   );
 }

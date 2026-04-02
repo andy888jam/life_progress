@@ -15,8 +15,13 @@ import {
   Line,
   Legend,
 } from "recharts";
-import { useLocalStorage } from "./useLocalStorage";
-import type { SportEntry, WorkoutSet } from "./types";
+import type { AppData, SportEntry, WorkoutSet } from "./types";
+
+interface Props {
+  data: AppData;
+  save: (newData: AppData) => void;
+  isLoaded: boolean;
+}
 
 const SPORT_TYPES = [
   "Running",
@@ -109,8 +114,7 @@ const EXERCISES_BY_CATEGORY: Record<string, string[]> = {
   ],
 };
 
-export default function SportTracker() {
-  const { data, save, isLoaded } = useLocalStorage();
+export default function SportTracker({ data, save, isLoaded }: Props) {
   const [sportType, setSportType] = useState(SPORT_TYPES[0]);
   const [customType, setCustomType] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
