@@ -79,6 +79,8 @@ const EXERCISES_BY_CATEGORY: Record<string, string[]> = {
     "Dumbbell Press",
     "Overhead Press",
     "Dumbbell Shoulder Press",
+    "Chest Press",
+    "Pec Deck Fly",
     "Dips",
     "Tricep Pushdown",
     "Lateral Raise",
