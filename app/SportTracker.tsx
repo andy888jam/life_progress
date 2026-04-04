@@ -131,6 +131,16 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
   const [workoutSets, setWorkoutSets] = useState<WorkoutSet[]>([
     { exercise: "", weight: 0, sets: 0, reps: 0 },
   ]);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{
+    date: string;
+    type: string;
+    durationMinutes: string;
+    distance: string;
+    comment: string;
+    workoutCategory: "Push" | "Pull" | "Legs";
+    workoutSets: WorkoutSet[];
+  } | null>(null);
 
   function updateWorkoutSet(index: number, field: keyof WorkoutSet, value: string | number) {
     setWorkoutSets((prev) =>
@@ -183,6 +193,59 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
       ...data,
       sportEntries: data.sportEntries.filter((e) => e.id !== entryId),
     });
+  }
+
+  function startEditing(entry: SportEntry) {
+    setEditingEntryId(entry.id);
+    setEditForm({
+      date: entry.date,
+      type: entry.type,
+      durationMinutes: String(entry.durationMinutes),
+      distance: entry.distance != null ? String(entry.distance) : "",
+      comment: entry.comment,
+      workoutCategory: entry.workoutCategory || "Push",
+      workoutSets: entry.workoutSets && entry.workoutSets.length > 0
+        ? [...entry.workoutSets]
+        : [{ exercise: "", weight: 0, sets: 0, reps: 0 }],
+    });
+  }
+
+  function cancelEditing() {
+    setEditingEntryId(null);
+    setEditForm(null);
+  }
+
+  function saveEdit() {
+    if (!editForm || !editingEntryId) return;
+    const dur = Number(editForm.durationMinutes);
+    if (isNaN(dur) || dur <= 0) {
+      alert("Please enter a valid duration.");
+      return;
+    }
+    const dist = editForm.distance ? Number(editForm.distance) : undefined;
+    save({
+      ...data,
+      sportEntries: data.sportEntries.map((e) =>
+        e.id === editingEntryId
+          ? {
+              ...e,
+              date: editForm.date,
+              type: editForm.type,
+              durationMinutes: dur,
+              distance: dist && !isNaN(dist) ? dist : undefined,
+              comment: editForm.comment.trim(),
+              ...(editForm.type === "Workout"
+                ? {
+                    workoutCategory: editForm.workoutCategory,
+                    workoutSets: editForm.workoutSets.filter((s) => s.exercise.trim()),
+                  }
+                : { workoutCategory: undefined, workoutSets: undefined }),
+            }
+          : e
+      ),
+    });
+    setEditingEntryId(null);
+    setEditForm(null);
   }
 
   if (!isLoaded) {
@@ -817,8 +880,153 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
               .map((entry) => (
                 <div
                   key={entry.id}
-                  className="flex items-start gap-4 sm:gap-6 p-4 sm:p-5 bg-[#3b3b42] border border-[#5a5a63] hover:border-[#6a6a72] transition-colors"
+                  className="p-4 sm:p-5 bg-[#3b3b42] border border-[#5a5a63] hover:border-[#6a6a72] transition-colors"
                 >
+                  {editingEntryId === entry.id && editForm ? (
+                    /* ===== EDIT MODE ===== */
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                          type="date"
+                          value={editForm.date}
+                          onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                          className="px-3 py-2 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-sm focus:outline-none focus:border-[#e4007c]"
+                        />
+                        <select
+                          value={editForm.type}
+                          onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
+                          className="px-3 py-2 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-sm focus:outline-none focus:border-[#e4007c]"
+                        >
+                          {SPORT_TYPES.map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {editForm.type === "Workout" && (
+                        <div className="space-y-3">
+                          <select
+                            value={editForm.workoutCategory}
+                            onChange={(e) => setEditForm({ ...editForm, workoutCategory: e.target.value as "Push" | "Pull" | "Legs" })}
+                            className="px-3 py-2 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-sm focus:outline-none focus:border-[#e4007c]"
+                          >
+                            <option value="Push">Push</option>
+                            <option value="Pull">Pull</option>
+                            <option value="Legs">Legs</option>
+                          </select>
+                          <div className="border border-[#5a5a63] overflow-x-auto">
+                            <table className="w-full text-xs min-w-[320px]">
+                              <thead>
+                                <tr className="bg-[#323238] text-[#a5a5ad] text-[9px] uppercase tracking-[0.15em]">
+                                  <th className="text-left px-2 py-1.5">Exercise</th>
+                                  <th className="text-center px-2 py-1.5 w-16">Weight</th>
+                                  <th className="text-center px-2 py-1.5 w-12">Sets</th>
+                                  <th className="text-center px-2 py-1.5 w-12">Reps</th>
+                                  <th className="w-8"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {editForm.workoutSets.map((ws, i) => (
+                                  <tr key={i} className="border-t border-[#5a5a63]">
+                                    <td className="px-2 py-1">
+                                      <select
+                                        value={ws.exercise}
+                                        onChange={(e) => {
+                                          const updated = [...editForm.workoutSets];
+                                          updated[i] = { ...updated[i], exercise: e.target.value };
+                                          setEditForm({ ...editForm, workoutSets: updated });
+                                        }}
+                                        className="w-full bg-[#323238] border-none text-[#f5f0eb] text-xs focus:outline-none"
+                                      >
+                                        <option value="">Select...</option>
+                                        {(EXERCISES_BY_CATEGORY[editForm.workoutCategory] || []).map((ex) => (
+                                          <option key={ex} value={ex}>{ex}</option>
+                                        ))}
+                                      </select>
+                                    </td>
+                                    <td className="px-2 py-1">
+                                      <input type="number" value={ws.weight} onChange={(e) => {
+                                        const updated = [...editForm.workoutSets];
+                                        updated[i] = { ...updated[i], weight: Number(e.target.value) };
+                                        setEditForm({ ...editForm, workoutSets: updated });
+                                      }} className="w-full bg-[#323238] border-none text-center text-[#f5f0eb] text-xs focus:outline-none" />
+                                    </td>
+                                    <td className="px-2 py-1">
+                                      <input type="number" value={ws.sets} onChange={(e) => {
+                                        const updated = [...editForm.workoutSets];
+                                        updated[i] = { ...updated[i], sets: Number(e.target.value) };
+                                        setEditForm({ ...editForm, workoutSets: updated });
+                                      }} className="w-full bg-[#323238] border-none text-center text-[#f5f0eb] text-xs focus:outline-none" />
+                                    </td>
+                                    <td className="px-2 py-1">
+                                      <input type="number" value={ws.reps} onChange={(e) => {
+                                        const updated = [...editForm.workoutSets];
+                                        updated[i] = { ...updated[i], reps: Number(e.target.value) };
+                                        setEditForm({ ...editForm, workoutSets: updated });
+                                      }} className="w-full bg-[#323238] border-none text-center text-[#f5f0eb] text-xs focus:outline-none" />
+                                    </td>
+                                    <td className="px-1 py-1 text-center">
+                                      <button onClick={() => {
+                                        setEditForm({ ...editForm, workoutSets: editForm.workoutSets.filter((_, j) => j !== i) });
+                                      }} className="text-[#6a6a72] hover:text-[#e4007c] cursor-pointer text-xs">✕</button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setEditForm({ ...editForm, workoutSets: [...editForm.workoutSets, { exercise: "", weight: 0, sets: 0, reps: 0 }] })}
+                            className="px-3 py-1 text-[10px] uppercase tracking-[0.2em] border border-[#5a5a63] text-[#a5a5ad] hover:border-[#e4007c] hover:text-[#e4007c] transition-colors cursor-pointer"
+                          >
+                            + Add Exercise
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                          type="number"
+                          min="1"
+                          value={editForm.durationMinutes}
+                          onChange={(e) => setEditForm({ ...editForm, durationMinutes: e.target.value })}
+                          placeholder="Duration (min)"
+                          className="flex-1 px-3 py-2 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-sm focus:outline-none focus:border-[#e4007c] placeholder-[#6a6a72]"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={editForm.distance}
+                          onChange={(e) => setEditForm({ ...editForm, distance: e.target.value })}
+                          placeholder="Distance (km)"
+                          className="flex-1 px-3 py-2 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-sm focus:outline-none focus:border-[#e4007c] placeholder-[#6a6a72]"
+                        />
+                      </div>
+                      <textarea
+                        value={editForm.comment}
+                        onChange={(e) => setEditForm({ ...editForm, comment: e.target.value })}
+                        placeholder="Comment"
+                        rows={2}
+                        className="w-full px-3 py-2 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] text-sm focus:outline-none focus:border-[#e4007c] placeholder-[#6a6a72] resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveEdit}
+                          className="px-4 py-2 text-[10px] uppercase tracking-[0.2em] bg-[#e4007c] hover:bg-[#ff3da1] text-white transition-colors cursor-pointer"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="px-4 py-2 text-[10px] uppercase tracking-[0.2em] border border-[#5a5a63] text-[#a5a5ad] hover:border-[#e4007c] hover:text-[#e4007c] transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ===== VIEW MODE ===== */
+                    <div className="flex items-start gap-4 sm:gap-6">
                   <div className="shrink-0 text-center min-w-[40px] sm:min-w-[48px]">
                     <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-[#a5a5ad]">
                       {new Date(entry.date).toLocaleDateString("en-US", {
@@ -897,9 +1105,19 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                       </p>
                     )}
                   </div>
-                  <button
+                  <div className="shrink-0 flex flex-col gap-2">
+                    <button
+                      onClick={() => startEditing(entry)}
+                      className="text-[#6a6a72] hover:text-[#00b4d8] transition-colors cursor-pointer"
+                      title="Edit entry"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                      </svg>
+                    </button>
+                    <button
                     onClick={() => deleteEntry(entry.id)}
-                    className="shrink-0 text-[#6a6a72] hover:text-[#e4007c] transition-colors cursor-pointer"
+                    className="text-[#6a6a72] hover:text-[#e4007c] transition-colors cursor-pointer"
                     title="Delete entry"
                   >
                     <svg
@@ -916,6 +1134,9 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                       />
                     </svg>
                   </button>
+                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
           </div>
