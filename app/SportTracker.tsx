@@ -303,7 +303,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
     .filter((e) => e.type === "Running" && e.distance)
     .reduce((s, e) => s + (e.distance ?? 0), 0);
 
-  // Workout progress: aggregate latest weight per exercise per category
+  // Workout progress: all sets per category, sorted newest first
   const workoutEntries = entries.filter(
     (e) => e.type === "Workout" && e.workoutSets && e.workoutSets.length > 0
   );
@@ -311,15 +311,15 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
     const catEntries = workoutEntries
       .filter((e) => e.workoutCategory === cat)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const exerciseMap = new Map<string, { weight: number; sets: number; reps: number; date: string }>();
+    const allRows: { exercise: string; weight: number; sets: number; reps: number; date: string }[] = [];
     for (const entry of catEntries) {
       for (const ws of entry.workoutSets!) {
-        if (!exerciseMap.has(ws.exercise)) {
-          exerciseMap.set(ws.exercise, { weight: ws.weight, sets: ws.sets, reps: ws.reps, date: entry.date });
+        if (ws.exercise.trim()) {
+          allRows.push({ exercise: ws.exercise, weight: ws.weight, sets: ws.sets, reps: ws.reps, date: entry.date });
         }
       }
     }
-    return { category: cat, exercises: Array.from(exerciseMap.entries()) };
+    return { category: cat, rows: allRows };
   });
 
   // Run progress: all running entries with distance, sorted newest first
@@ -694,7 +694,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
           )}
 
           {/* Progress Tables with Workout / Run tabs */}
-          {(workoutProgressByCategory.some((c) => c.exercises.length > 0) || runProgressEntries.length > 0) && (
+          {(workoutProgressByCategory.some((c) => c.rows.length > 0) || runProgressEntries.length > 0) && (
             <div className="border border-[#5a5a63] bg-[#3b3b42] p-6">
               <div className="flex items-center gap-0 mb-6 border-b border-[#5a5a63]">
                 <button
@@ -728,7 +728,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                       {Array.from(
                         new Set(
                           workoutProgressByCategory.flatMap((c) =>
-                            c.exercises.map(([name]) => name)
+                            c.rows.map((r) => r.exercise)
                           )
                         )
                       )
@@ -746,14 +746,14 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
               {dashboardProgressTab === "workout" && (
                 <div className="space-y-6">
                   {workoutProgressByCategory
-                    .map(({ category, exercises }) => ({
+                    .map(({ category, rows }) => ({
                       category,
-                      exercises: workoutExerciseFilter
-                        ? exercises.filter(([name]) => name === workoutExerciseFilter)
-                        : exercises,
+                      rows: workoutExerciseFilter
+                        ? rows.filter((r) => r.exercise === workoutExerciseFilter)
+                        : rows,
                     }))
-                    .filter((c) => c.exercises.length > 0)
-                    .map(({ category, exercises }) => (
+                    .filter((c) => c.rows.length > 0)
+                    .map(({ category, rows }) => (
                       <div key={category}>
                         <h4 className="text-xs uppercase tracking-[0.2em] text-[#fbbf24] mb-3">
                           {category} Day
@@ -766,17 +766,17 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                                 <th className="text-center px-3 py-2 w-20">Weight</th>
                                 <th className="text-center px-3 py-2 w-16">Sets</th>
                                 <th className="text-center px-3 py-2 w-16">Reps</th>
-                                <th className="text-right px-3 py-2 w-24">Last Date</th>
+                                <th className="text-right px-3 py-2 w-24">Date</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {exercises.map(([exercise, info]) => (
-                                <tr key={exercise} className="border-t border-[#5a5a63]">
-                                  <td className="px-3 py-2 text-[#f5f0eb]">{exercise}</td>
-                                  <td className="px-3 py-2 text-center text-[#fbbf24] font-bold">{info.weight}kg</td>
-                                  <td className="px-3 py-2 text-center text-[#a5a5ad]">{info.sets}</td>
-                                  <td className="px-3 py-2 text-center text-[#a5a5ad]">{info.reps}</td>
-                                  <td className="px-3 py-2 text-right text-[#a5a5ad] text-xs">{info.date}</td>
+                              {rows.map((row, i) => (
+                                <tr key={`${row.exercise}-${row.date}-${i}`} className="border-t border-[#5a5a63]">
+                                  <td className="px-3 py-2 text-[#f5f0eb]">{row.exercise}</td>
+                                  <td className="px-3 py-2 text-center text-[#fbbf24] font-bold">{row.weight}kg</td>
+                                  <td className="px-3 py-2 text-center text-[#a5a5ad]">{row.sets}</td>
+                                  <td className="px-3 py-2 text-center text-[#a5a5ad]">{row.reps}</td>
+                                  <td className="px-3 py-2 text-right text-[#a5a5ad] text-xs">{row.date}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -784,7 +784,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                         </div>
                       </div>
                     ))}
-                  {workoutProgressByCategory.every((c) => c.exercises.length === 0) && (
+                  {workoutProgressByCategory.every((c) => c.rows.length === 0) && (
                     <p className="text-sm text-[#6a6a72] text-center py-8 italic">No workout data yet.</p>
                   )}
                 </div>
