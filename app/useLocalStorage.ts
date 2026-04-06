@@ -7,7 +7,7 @@ import type { AppData } from "./types";
 
 const STORAGE_KEY = "udemy-progress-tracker";
 
-const defaultData: AppData = { courses: [], sportEntries: [] };
+const defaultData: AppData = { courses: [], sportEntries: [], notes: [] };
 
 async function fetchFromApi(): Promise<AppData | null> {
   try {
@@ -52,6 +52,7 @@ export function useLocalStorage() {
             const localData: AppData = {
               courses: parsed.courses ?? [],
               sportEntries: parsed.sportEntries ?? [],
+              notes: parsed.notes ?? [],
             };
             setData(localData);
             // Sync localStorage data up to the API

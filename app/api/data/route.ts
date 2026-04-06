@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import type { AppData, Course, ProgressEntry, SportEntry } from "@/app/types";
+import type { AppData, Course, ProgressEntry, SportEntry, NoteEntry } from "@/app/types";
 
 export async function GET() {
   const db = getDb();
@@ -32,6 +32,12 @@ export async function GET() {
     workout_sets: string | null;
   }>;
 
+  const noteRows = db.prepare("SELECT * FROM notes ORDER BY date DESC").all() as Array<{
+    id: string;
+    date: string;
+    content: string;
+  }>;
+
   const data: AppData = {
     courses: courses.map((c) => ({
       id: c.id,
@@ -56,6 +62,11 @@ export async function GET() {
       workoutCategory: (s.workout_category as "Push" | "Pull" | "Legs") ?? undefined,
       workoutSets: s.workout_sets ? JSON.parse(s.workout_sets) : undefined,
     })),
+    notes: noteRows.map((n) => ({
+      id: n.id,
+      date: n.date,
+      content: n.content,
+    })),
   };
 
   return NextResponse.json(data);
@@ -75,6 +86,7 @@ export async function PUT(request: Request) {
     db.prepare("DELETE FROM progress_entries").run();
     db.prepare("DELETE FROM courses").run();
     db.prepare("DELETE FROM sport_entries").run();
+    db.prepare("DELETE FROM notes").run();
 
     // Insert courses and their entries
     const insertCourse = db.prepare(
@@ -85,6 +97,9 @@ export async function PUT(request: Request) {
     );
     const insertSport = db.prepare(
       "INSERT INTO sport_entries (id, date, type, duration_minutes, distance, comment, workout_category, workout_sets) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+    const insertNote = db.prepare(
+      "INSERT INTO notes (id, date, content) VALUES (?, ?, ?)"
     );
 
     for (const course of body.courses) {
@@ -105,6 +120,10 @@ export async function PUT(request: Request) {
         sport.workoutCategory ?? null,
         sport.workoutSets ? JSON.stringify(sport.workoutSets) : null
       );
+    }
+
+    for (const note of (body.notes || [])) {
+      insertNote.run(note.id, note.date, note.content);
     }
   });
 

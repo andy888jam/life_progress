@@ -35,4 +35,11 @@ export interface SportEntry {
 export interface AppData {
   courses: Course[];
   sportEntries: SportEntry[];
+  notes: NoteEntry[];
+}
+
+export interface NoteEntry {
+  id: string;
+  date: string;
+  content: string;
 }

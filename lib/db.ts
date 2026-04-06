@@ -44,6 +44,12 @@ function initTables(db: Database.Database) {
       workout_category TEXT,
       workout_sets TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      content TEXT NOT NULL DEFAULT ''
+    );
   `);
 
   // Migrate: add workout columns if missing

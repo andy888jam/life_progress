@@ -5,9 +5,10 @@
 import { useState, useRef } from "react";
 import ProgressTracker from "./ProgressTracker";
 import SportTracker from "./SportTracker";
+import NoteTracker from "./NoteTracker";
 import { useLocalStorage } from "./useLocalStorage";
 
-type Tab = "course" | "sport";
+type Tab = "course" | "sport" | "note";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("course");
@@ -106,12 +107,24 @@ export default function Home() {
             >
               Sport
             </button>
+            <button
+              onClick={() => setActiveTab("note")}
+              className={`px-6 py-3 text-xs uppercase tracking-[0.25em] font-medium transition-all duration-300 border-b-2 cursor-pointer ${
+                activeTab === "note"
+                  ? "border-[#e4007c] text-[#f5f0eb]"
+                  : "border-transparent text-[#a5a5ad] hover:text-[#f5f0eb]"
+              }`}
+            >
+              Note
+            </button>
           </div>
         </div>
       </header>
 
       {/* Content */}
-      {activeTab === "course" ? <ProgressTracker data={data} save={save} isLoaded={isLoaded} /> : <SportTracker data={data} save={save} isLoaded={isLoaded} />}
+      {activeTab === "course" && <ProgressTracker data={data} save={save} isLoaded={isLoaded} />}
+      {activeTab === "sport" && <SportTracker data={data} save={save} isLoaded={isLoaded} />}
+      {activeTab === "note" && <NoteTracker data={data} save={save} isLoaded={isLoaded} />}
     </div>
   );
 }
