@@ -91,6 +91,7 @@ const EXERCISES_BY_CATEGORY: Record<string, string[]> = {
   Pull: [
     "Deadlift",
     "Pull-Up",
+    "Assisted Pull-Up",
     "Chin-Up",
     "Barbell Row",
     "Dumbbell Row",
@@ -176,7 +177,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
       ...(type === "Workout"
         ? {
             workoutCategory,
-            workoutSets: workoutSets.filter((s) => s.exercise.trim()),
+            workoutSets: workoutSets.filter((s) => s.exercise.trim() && s.exercise !== "__other__"),
           }
         : {}),
     };
@@ -237,7 +238,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
               ...(editForm.type === "Workout"
                 ? {
                     workoutCategory: editForm.workoutCategory,
-                    workoutSets: editForm.workoutSets.filter((s) => s.exercise.trim()),
+                    workoutSets: editForm.workoutSets.filter((s) => s.exercise.trim() && s.exercise !== "__other__"),
                   }
                 : { workoutCategory: undefined, workoutSets: undefined }),
             }
@@ -446,8 +447,18 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                         <tr key={i} className="border-t border-[#5a5a63]">
                           <td className="px-1 py-1">
                             <select
-                              value={ws.exercise}
-                              onChange={(e) => updateWorkoutSet(i, "exercise", e.target.value)}
+                              value={
+                                (EXERCISES_BY_CATEGORY[workoutCategory] || []).includes(ws.exercise) || ws.exercise === ""
+                                  ? ws.exercise
+                                  : "Other"
+                              }
+                              onChange={(e) => {
+                                if (e.target.value === "Other") {
+                                  updateWorkoutSet(i, "exercise", "__other__");
+                                } else {
+                                  updateWorkoutSet(i, "exercise", e.target.value);
+                                }
+                              }}
                               className="w-full px-2 py-2 bg-transparent text-[#f5f0eb] focus:outline-none text-sm"
                             >
                               <option value="" className="bg-[#323238]">Select exercise</option>
@@ -455,6 +466,16 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                                 <option key={ex} value={ex} className="bg-[#323238]">{ex}</option>
                               ))}
                             </select>
+                            {(ws.exercise === "__other__" || (ws.exercise !== "" && !(EXERCISES_BY_CATEGORY[workoutCategory] || []).includes(ws.exercise))) && (
+                              <input
+                                type="text"
+                                value={ws.exercise === "__other__" ? "" : ws.exercise}
+                                onChange={(e) => updateWorkoutSet(i, "exercise", e.target.value || "__other__")}
+                                placeholder="Enter exercise name"
+                                className="w-full px-2 py-1.5 mt-1 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] placeholder-[#6a6a72] focus:outline-none focus:border-[#e4007c] text-sm"
+                                autoFocus
+                              />
+                            )}
                           </td>
                           <td className="px-1 py-1">
                             <input
@@ -929,10 +950,18 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                                   <tr key={i} className="border-t border-[#5a5a63]">
                                     <td className="px-2 py-1">
                                       <select
-                                        value={ws.exercise}
+                                        value={
+                                          (EXERCISES_BY_CATEGORY[editForm.workoutCategory] || []).includes(ws.exercise) || ws.exercise === ""
+                                            ? ws.exercise
+                                            : "Other"
+                                        }
                                         onChange={(e) => {
                                           const updated = [...editForm.workoutSets];
-                                          updated[i] = { ...updated[i], exercise: e.target.value };
+                                          if (e.target.value === "Other") {
+                                            updated[i] = { ...updated[i], exercise: "__other__" };
+                                          } else {
+                                            updated[i] = { ...updated[i], exercise: e.target.value };
+                                          }
                                           setEditForm({ ...editForm, workoutSets: updated });
                                         }}
                                         className="w-full bg-[#323238] border-none text-[#f5f0eb] text-xs focus:outline-none"
@@ -942,6 +971,19 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
                                           <option key={ex} value={ex}>{ex}</option>
                                         ))}
                                       </select>
+                                      {(ws.exercise === "__other__" || (ws.exercise !== "" && !(EXERCISES_BY_CATEGORY[editForm.workoutCategory] || []).includes(ws.exercise))) && (
+                                        <input
+                                          type="text"
+                                          value={ws.exercise === "__other__" ? "" : ws.exercise}
+                                          onChange={(e) => {
+                                            const updated = [...editForm.workoutSets];
+                                            updated[i] = { ...updated[i], exercise: e.target.value || "__other__" };
+                                            setEditForm({ ...editForm, workoutSets: updated });
+                                          }}
+                                          placeholder="Enter exercise name"
+                                          className="w-full px-2 py-1 mt-1 bg-[#323238] border border-[#5a5a63] text-[#f5f0eb] placeholder-[#6a6a72] focus:outline-none focus:border-[#e4007c] text-xs"
+                                        />
+                                      )}
                                     </td>
                                     <td className="px-2 py-1">
                                       <input type="number" value={ws.weight} onChange={(e) => {
