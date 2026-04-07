@@ -37,6 +37,7 @@ export default function NoteTracker({ data, save, isLoaded }: Props) {
   }
 
   function deleteNote(id: string) {
+    if (!confirm("Are you sure you want to delete this note?")) return;
     save({ ...data, notes: data.notes.filter((n) => n.id !== id) });
   }
 

@@ -190,6 +190,7 @@ export default function SportTracker({ data, save, isLoaded }: Props) {
   }
 
   function deleteEntry(entryId: string) {
+    if (!confirm("Are you sure you want to delete this entry?")) return;
     save({
       ...data,
       sportEntries: data.sportEntries.filter((e) => e.id !== entryId),
